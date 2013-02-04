@@ -1,12 +1,10 @@
 # Used to create required db entries for HAproxy health monitoring
 
 class galera::haproxy(
-  $mysql_user     	= 'wsrep_sst',
-  $mysql_password 	= 'password',
+  $mysql_user     	= $galera::params::mysql_user,
+  $mysql_password 	= $galera::params::mysql_password,
   $haproxy_user		= 'haproxy',
 ) 
-
-  #inherits galera
 
 {
   exec { "haproxy-monitor" :
@@ -14,6 +12,6 @@ class galera::haproxy(
         path        => '/usr/bin:/usr/sbin:/bin:/sbin',
 	subscribe   => Service['mysql-galera'],
 	refreshonly => true,  
-       #unless      => "/usr/bin/mysql -u${mysql_user} -p${mysql_password} -e \"USE mysql; SELECT User FROM user WHERE User = 'haproxy';\"",
+        unless      => "/usr/bin/mysql -u${mysql_user} -p${mysql_password} -e \"USE mysql; SELECT User FROM user WHERE User = 'haproxy';\"",
     }
 }

@@ -11,6 +11,7 @@
 ## mysqld options _MANDATORY_ for correct opration of the cluster
 ##
 [mysqld]
+datadir=/var/lib/mysql
 
 # (This must be substituted by wsrep_format)
 binlog_format=ROW
@@ -21,7 +22,7 @@ default-storage-engine=innodb
 # to avoid issues with 'bulk mode inserts' using autoinc
 innodb_autoinc_lock_mode=2
 
-# This is a must for paralell applying
+# This is a must for parallel applying
 innodb_locks_unsafe_for_binlog=1
 
 # Query Cache is not supported with wsrep
@@ -38,20 +39,13 @@ bind-address=0.0.0.0
 ##
 
 # Full path to wsrep provider library or 'none'
-wsrep_provider=/usr/lib/galera/libgalera_smm.so
+wsrep_provider=<%=galeralib-%>
 
 # Provider specific configuration options
-#wsrep_provider_options=
+wsrep_provider_options="evs.keepalive_period=PT3S; evs.inactive_check_period=PT10S; evs.suspect_timeout=PT30S; evs.inactive_timeout=PT1M; evs.consensus_timeout=PT1M; evs.send_window=1024; evs.user_send_window=512; gcache.size=2G;"
 
 # Logical cluster name. Should be the same for all nodes.
 wsrep_cluster_name="<%=cluster_name-%>"
-
-# Group communication system handle
-<% if master_ip -%>
-wsrep_cluster_address="gcomm://<%= master_ip %>"
-<% else -%>
-wsrep_cluster_address="gcomm://"
-<% end -%>
 
 # Human-readable node name (non-unique). Hostname by default.
 #wsrep_node_name=
@@ -65,7 +59,7 @@ wsrep_cluster_address="gcomm://"
 #wsrep_node_incoming_address=
 
 # How many threads will process writesets from other nodes
-wsrep_slave_threads=1
+wsrep_slave_threads=4
 
 # DBUG options for wsrep provider
 #wsrep_dbug_option
@@ -98,6 +92,10 @@ wsrep_drupal_282555_workaround=0
 # enable "strictly synchronous" semantics for read operations
 wsrep_causal_reads=0
 
+#Type of Schema Upgrade to use
+#TOI,RSU
+wsrep_OSU_method=TOI
+
 # Command to call when node status or cluster membership changes.
 # Will be passed all or some of the following options:
 # --status  - new status of this node
@@ -105,14 +103,14 @@ wsrep_causal_reads=0
 # --primary - whether the component is primary or not ("yes"/"no")
 # --members - comma-separated list of members
 # --index   - index of this node in the list
-wsrep_notify_cmd=
+# wsrep_notify_cmd=
 
 ##
 ## WSREP State Transfer options
 ##
 
 # State Snapshot Transfer method
-wsrep_sst_method=rsync
+wsrep_sst_method=xtrabackup
 
 # Address on THIS node to receive SST at. DON'T SET IT TO DONOR ADDRESS!!!
 # (SST method dependent. Defaults to the first IP of the first interface)
@@ -120,10 +118,14 @@ wsrep_sst_method=rsync
 
 # SST authentication string. This will be used to send SST to joining nodes.
 # Depends on SST method. For mysqldump method it is root:<root password>
-wsrep_sst_auth=wsrep_sst:password
+wsrep_sst_auth=<%=mysql_user-%>:<%=mysql_password-%>
 
 # Desired SST donor name.
 #wsrep_sst_donor=
 
 # Protocol version to use
 # wsrep_protocol_version=
+
+[MYSQLD_SAFE]
+datadir=/var/lib/mysql
+open_files_limit=200000
